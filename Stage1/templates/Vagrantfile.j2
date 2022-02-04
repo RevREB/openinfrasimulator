@@ -37,7 +37,7 @@ Vagrant.configure("2") do |config|
   end{% endif %}
 
 {% for device in devices %}
-{% if device.function == "oob-switch" -%}
+{# {% if device.function == "oob-switch" -%}
   ##### DEFINE VM for {{ device.hostname }} #####
   config.vm.define "{{ device.hostname }}" do |device|
     device.vm.hostname = "{{ device.hostname }}" {% if device.pxehost=="True" and provider == 'libvirt'%}
@@ -497,9 +497,10 @@ vagrant_interface_rule
 
 end
 
-{%- endif %}
+{%- endif %} #}
 
-{% if device.function == "superspine" -%}
+### Begin SUPERSPINE ###
+{# {% if device.function == "superspine" -%}
   ##### DEFINE VM for {{ device.hostname }} #####
   config.vm.define "{{ device.hostname }}" do |device|
     device.vm.hostname = "{{ device.hostname }}" {% if device.pxehost=="True" and provider == 'libvirt'%}
@@ -651,9 +652,167 @@ vagrant_interface_rule
 
 end
 
-{%- endif %}
+{%- endif %} #}
+### Begin SUPERSPINE ###
 
+### Begin SPINE ###
 {% if device.function == "spine" -%}
+{#   ##### DEFINE VM for {{ device.hostname }} #####
+  config.vm.define "{{ device.hostname }}" do |device|
+    device.vm.hostname = "{{ device.hostname }}" {% if device.pxehost=="True" and provider == 'libvirt'%}
+    #NO BOX USED FOR PXE DEVICE{% else %}
+    device.vm.box = "{{ device.os }}"{% if device.version %}
+    device.vm.box_version = "{{ device.version }}"{% endif %}{% if device.vagrant_user %}
+    device.ssh.username = "{{ device.vagrant_user }}"{% endif %}{% endif %}
+{% if provider == 'virtualbox' %}    device.vm.provider "virtualbox" do |v|
+      v.name = "{{ epoch_time }}_{{ device.hostname }}"
+      v.customize ["modifyvm", :id, '--audiocontroller', 'AC97', '--audio', 'Null']{% elif provider == 'libvirt' %}
+    device.vm.provider :libvirt do |v|{% if device.pxehost=="True" %}
+      v.storage :file, :size => '100G', :type => 'qcow2', :bus => 'sata', :device => 'sda'
+      v.boot 'hd'
+      v.boot 'network'{% endif %}{% if device.function == 'host' %}
+      v.nic_model_type = 'e1000' {% endif %}
+{% endif %}{% if device.memory is defined %}      v.memory = {{ device.memory }}{% endif %}
+    end{% if synced_folder == False %}
+    #   see note here: https://github.com/pradels/vagrant-libvirt#synced-folders
+    device.vm.synced_folder ".", "/vagrant", disabled: true{% endif %}
+
+{% if device.ssh_port is defined %}    # SSH Port
+    device.vm.network :forwarded_port, guest: 22, host: {{ device.ssh_port }}, host_ip: "0.0.0.0", id: "ssh", auto_correct:true
+{%- endif %}
+
+    # NETWORK INTERFACES{% for link in device.interfaces %}
+      # link for {{ link.local_interface }} --> {{ link.remote_device }}:{{ link.remote_interface }}
+      {% if provider == 'virtualbox' %}device.vm.network "private_network", virtualbox__intnet: "{{ epoch_time }}_{{ link.network }}", auto_config: false , :mac => "{{ link.mac|replace(':', '') }}"
+      {% elif provider == 'libvirt' %}device.vm.network "private_network",
+            :mac => "{{ link.mac }}",
+            :libvirt__tunnel_type => 'udp',
+            :libvirt__tunnel_local_ip => '{{ link.local_ip }}',
+            :libvirt__tunnel_local_port => '{{ link.local_port }}',
+            :libvirt__tunnel_ip => '{{ link.remote_ip }}',
+            :libvirt__tunnel_port => '{{ link.remote_port }}',
+            :libvirt__iface_name => '{{ link.local_interface }}',
+            auto_config: false{% endif %}{% endfor %}
+
+{% if provider == 'virtualbox' %}    device.vm.provider "virtualbox" do |vbox|{% for i in range(2, 2+device.interfaces.__len__()) %}
+      vbox.customize ['modifyvm', :id, '--nicpromisc{{i}}', 'allow-all']{% endfor %}
+      vbox.customize ["modifyvm", :id, "--nictype1", "virtio"]{% if device.pxehost=="True" %}
+
+      #Setup Interfaces for PXEBOOT
+        #Adding network as a boot option.
+        vbox.customize ["modifyvm", :id, "--boot4", "net"]
+
+        #Setting Vagrant interface to lowest boot preference
+        vbox.customize ["modifyvm", :id, "--nicbootprio1", "0"]
+{% for link in device.interfaces %}{% if link.pxebootinterface %}{% if link.pxebootinterface == "True" %}
+        #Setting Specified interface to highest preference.
+        vbox.customize ["modifyvm", :id, "--nicbootprio{{loop.index+1}}", "1"]{% endif %}{% endif %}{% endfor %}{% endif %}
+    end{% endif %}
+
+    # Fixes "stdin: is not a tty" and "mesg: ttyname failed : Inappropriate ioctl for device"  messages --> https://github.com/mitchellh/vagrant/issues/1673
+    device.vm.provision :shell , inline: "(sudo grep -q 'mesg n' /root/.profile 2>/dev/null && sudo sed -i '/mesg n/d' /root/.profile  2>/dev/null) || true;", privileged: false
+
+    {% if "ubuntu" in device.os.lower() -%}
+    # Shorten Boot Process - Applies to Ubuntu Only - remove \"Wait for Network\"
+    device.vm.provision :shell , inline: "sed -i 's/sleep [0-9]*/sleep 1/' /etc/init/failsafe.conf 2>/dev/null || true"
+
+    {% endif -%}
+{% if device.function == "oob-server" and create_mgmt_device -%}
+    #Copy over DHCP files and MGMT Network Files
+    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/dhcpd.conf", destination: "~/dhcpd.conf"
+    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/dhcpd.hosts", destination: "~/dhcpd.hosts"
+    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/hosts", destination: "~/hosts"
+    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/ansible_hostfile", destination: "~/ansible_hostfile"
+    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/ztp_oob.sh", destination: "~/ztp_oob.sh"
+{% endif -%}
+{% if create_mgmt_device and device.function != "Unknown" and device.function != "oob-server" and device.function != "host" -%}
+
+    #Copy over Topology.dot File
+    device.vm.provision "file", source: "{{ topology_file }}", destination: "~/topology.dot"
+    device.vm.provision :shell, privileged: false, inline: "sudo mv ~/topology.dot /etc/ptm.d/topology.dot"
+
+{% endif -%}
+
+{% if device.function == "oob-switch" and create_mgmt_device -%}
+      # Transfer Bridge File
+      device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/bridge-untagged", destination: "~/bridge-untagged"
+{% endif -%}
+
+{% if device.config is defined %}
+    # Run the Config specified in the Node Attributes
+    device.vm.provision :shell , privileged: false, :inline => 'echo "$(whoami)" > /tmp/normal_user'
+    device.vm.provision :shell , path: "{{ device.config }}"
+{% endif %}
+
+    # Install Rules for the interface re-map
+    {% if device.pxehost=="True" and provider == 'libvirt' -%}
+      # NO REMAP for LIBVIRT PXE DEVICE
+    {% elif device.remap=="False" -%}
+      # REMAP Disabled for this node
+    {% else -%}
+    device.vm.provision :shell , :inline => <<-delete_udev_directory
+if [ -d "/etc/udev/rules.d/70-persistent-net.rules" ]; then
+    rm -rfv /etc/udev/rules.d/70-persistent-net.rules &> /dev/null
+fi
+rm -rfv /etc/udev/rules.d/70-persistent-net.rules &> /dev/null
+delete_udev_directory
+
+{% for link in device.interfaces -%}
+
+      device.vm.provision :shell , :inline => <<-udev_rule
+echo "  INFO: Adding UDEV Rule: {{ link.mac }} --> {{ link.local_interface }}"
+echo 'ACTION=="add", SUBSYSTEM=="net", ATTR{address}=="{{ link.mac }}", NAME="{{ link.local_interface }}", SUBSYSTEMS=="pci"' >> /etc/udev/rules.d/70-persistent-net.rules
+udev_rule
+     {% endfor %}
+      device.vm.provision :shell , :inline => <<-vagrant_interface_rule
+echo "  INFO: Adding UDEV Rule: Vagrant interface = {% if device.vagrant %}{{ device.vagrant }}{%else%}vagrant{% endif%}"
+echo 'ACTION=="add", SUBSYSTEM=="net", ATTR{ifindex}=="2", NAME="{% if device.vagrant %}{{ device.vagrant }}{%else%}vagrant{% endif%}", SUBSYSTEMS=="pci"' >> /etc/udev/rules.d/70-persistent-net.rules
+echo "#### UDEV Rules (/etc/udev/rules.d/70-persistent-net.rules) ####"
+cat /etc/udev/rules.d/70-persistent-net.rules
+vagrant_interface_rule
+
+{% endif -%}
+
+{% if device.playbook is defined %}
+    # Ansible Playbook Configuration
+    device.vm.provision "ansible" do |ansible|
+          ansible.playbook = "{{ device.playbook }}"
+{%- if function_group is defined %}
+          # ANSIBLE GROUPS CONFIGURATION
+          ansible.groups = {
+{%- for function in function_group%}
+            "{{ function }}" => [{% for device in function_group[function] %}"{{device}}",{% endfor %}],
+{%- endfor %}
+            "network:children" => [{% for function in function_group%}{% if function in network_functions%}"{{function}}",{% endif %}{% endfor %}]
+          }
+{%- endif %}
+    end
+{% endif -%}
+
+{% if device.pxehost=="True" and provider == 'libvirt' -%}
+
+    # NO REMAP APPLICATION for LIBVIRT PXE DEVICE
+{% elif device.remap=="False" -%}
+
+    # NO REMAP APPLICATION Required
+
+{% else -%}
+    # Run Any Platform Specific Code and Apply the interface Re-map
+    #   (may or may not perform a reboot depending on platform)
+    #device.vm.provision :shell , :inline => $script
+
+{% endif -%}
+  end
+{% endfor %}
+
+
+end
+
+{%- endif %} #}
+### Begin Spine ###
+
+### Begin LEAF ###
+{# {% if device.function == "leaf" -%}
   ##### DEFINE VM for {{ device.hostname }} #####
   config.vm.define "{{ device.hostname }}" do |device|
     device.vm.hostname = "{{ device.hostname }}" {% if device.pxehost=="True" and provider == 'libvirt'%}
@@ -806,8 +965,11 @@ vagrant_interface_rule
 end
 
 {%- endif %}
+ #}
+### End LEAF ###
 
-{% if device.function == "leaf" -%}
+### Begin TOR ###
+{# {% if device.function == "tor" -%}
   ##### DEFINE VM for {{ device.hostname }} #####
   config.vm.define "{{ device.hostname }}" do |device|
     device.vm.hostname = "{{ device.hostname }}" {% if device.pxehost=="True" and provider == 'libvirt'%}
@@ -959,161 +1121,8 @@ vagrant_interface_rule
 
 end
 
-{%- endif %}
-
-{% if device.function == "tor" -%}
-  ##### DEFINE VM for {{ device.hostname }} #####
-  config.vm.define "{{ device.hostname }}" do |device|
-    device.vm.hostname = "{{ device.hostname }}" {% if device.pxehost=="True" and provider == 'libvirt'%}
-    #NO BOX USED FOR PXE DEVICE{% else %}
-    device.vm.box = "{{ device.os }}"{% if device.version %}
-    device.vm.box_version = "{{ device.version }}"{% endif %}{% if device.vagrant_user %}
-    device.ssh.username = "{{ device.vagrant_user }}"{% endif %}{% endif %}
-{% if provider == 'virtualbox' %}    device.vm.provider "virtualbox" do |v|
-      v.name = "{{ epoch_time }}_{{ device.hostname }}"
-      v.customize ["modifyvm", :id, '--audiocontroller', 'AC97', '--audio', 'Null']{% elif provider == 'libvirt' %}
-    device.vm.provider :libvirt do |v|{% if device.pxehost=="True" %}
-      v.storage :file, :size => '100G', :type => 'qcow2', :bus => 'sata', :device => 'sda'
-      v.boot 'hd'
-      v.boot 'network'{% endif %}{% if device.function == 'host' %}
-      v.nic_model_type = 'e1000' {% endif %}
-{% endif %}{% if device.memory is defined %}      v.memory = {{ device.memory }}{% endif %}
-    end{% if synced_folder == False %}
-    #   see note here: https://github.com/pradels/vagrant-libvirt#synced-folders
-    device.vm.synced_folder ".", "/vagrant", disabled: true{% endif %}
-
-{% if device.ssh_port is defined %}    # SSH Port
-    device.vm.network :forwarded_port, guest: 22, host: {{ device.ssh_port }}, host_ip: "0.0.0.0", id: "ssh", auto_correct:true
-{%- endif %}
-
-    # NETWORK INTERFACES{% for link in device.interfaces %}
-      # link for {{ link.local_interface }} --> {{ link.remote_device }}:{{ link.remote_interface }}
-      {% if provider == 'virtualbox' %}device.vm.network "private_network", virtualbox__intnet: "{{ epoch_time }}_{{ link.network }}", auto_config: false , :mac => "{{ link.mac|replace(':', '') }}"
-      {% elif provider == 'libvirt' %}device.vm.network "private_network",
-            :mac => "{{ link.mac }}",
-            :libvirt__tunnel_type => 'udp',
-            :libvirt__tunnel_local_ip => '{{ link.local_ip }}',
-            :libvirt__tunnel_local_port => '{{ link.local_port }}',
-            :libvirt__tunnel_ip => '{{ link.remote_ip }}',
-            :libvirt__tunnel_port => '{{ link.remote_port }}',
-            :libvirt__iface_name => '{{ link.local_interface }}',
-            auto_config: false{% endif %}{% endfor %}
-
-{% if provider == 'virtualbox' %}    device.vm.provider "virtualbox" do |vbox|{% for i in range(2, 2+device.interfaces.__len__()) %}
-      vbox.customize ['modifyvm', :id, '--nicpromisc{{i}}', 'allow-all']{% endfor %}
-      vbox.customize ["modifyvm", :id, "--nictype1", "virtio"]{% if device.pxehost=="True" %}
-
-      #Setup Interfaces for PXEBOOT
-        #Adding network as a boot option.
-        vbox.customize ["modifyvm", :id, "--boot4", "net"]
-
-        #Setting Vagrant interface to lowest boot preference
-        vbox.customize ["modifyvm", :id, "--nicbootprio1", "0"]
-{% for link in device.interfaces %}{% if link.pxebootinterface %}{% if link.pxebootinterface == "True" %}
-        #Setting Specified interface to highest preference.
-        vbox.customize ["modifyvm", :id, "--nicbootprio{{loop.index+1}}", "1"]{% endif %}{% endif %}{% endfor %}{% endif %}
-    end{% endif %}
-
-    # Fixes "stdin: is not a tty" and "mesg: ttyname failed : Inappropriate ioctl for device"  messages --> https://github.com/mitchellh/vagrant/issues/1673
-    device.vm.provision :shell , inline: "(sudo grep -q 'mesg n' /root/.profile 2>/dev/null && sudo sed -i '/mesg n/d' /root/.profile  2>/dev/null) || true;", privileged: false
-
-    {% if "ubuntu" in device.os.lower() -%}
-    # Shorten Boot Process - Applies to Ubuntu Only - remove \"Wait for Network\"
-    device.vm.provision :shell , inline: "sed -i 's/sleep [0-9]*/sleep 1/' /etc/init/failsafe.conf 2>/dev/null || true"
-
-    {% endif -%}
-{% if device.function == "oob-server" and create_mgmt_device -%}
-    #Copy over DHCP files and MGMT Network Files
-    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/dhcpd.conf", destination: "~/dhcpd.conf"
-    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/dhcpd.hosts", destination: "~/dhcpd.hosts"
-    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/hosts", destination: "~/hosts"
-    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/ansible_hostfile", destination: "~/ansible_hostfile"
-    device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/ztp_oob.sh", destination: "~/ztp_oob.sh"
-{% endif -%}
-{% if create_mgmt_device and device.function != "Unknown" and device.function != "oob-server" and device.function != "host" -%}
-
-    #Copy over Topology.dot File
-    device.vm.provision "file", source: "{{ topology_file }}", destination: "~/topology.dot"
-    device.vm.provision :shell, privileged: false, inline: "sudo mv ~/topology.dot /etc/ptm.d/topology.dot"
-
-{% endif -%}
-
-{% if device.function == "oob-switch" and create_mgmt_device -%}
-      # Transfer Bridge File
-      device.vm.provision "file", source: "{{ script_storage }}/auto_mgmt_network/bridge-untagged", destination: "~/bridge-untagged"
-{% endif -%}
-
-{% if device.config is defined %}
-    # Run the Config specified in the Node Attributes
-    device.vm.provision :shell , privileged: false, :inline => 'echo "$(whoami)" > /tmp/normal_user'
-    device.vm.provision :shell , path: "{{ device.config }}"
-{% endif %}
-
-    # Install Rules for the interface re-map
-    {% if device.pxehost=="True" and provider == 'libvirt' -%}
-      # NO REMAP for LIBVIRT PXE DEVICE
-    {% elif device.remap=="False" -%}
-      # REMAP Disabled for this node
-    {% else -%}
-    device.vm.provision :shell , :inline => <<-delete_udev_directory
-if [ -d "/etc/udev/rules.d/70-persistent-net.rules" ]; then
-    rm -rfv /etc/udev/rules.d/70-persistent-net.rules &> /dev/null
-fi
-rm -rfv /etc/udev/rules.d/70-persistent-net.rules &> /dev/null
-delete_udev_directory
-
-{% for link in device.interfaces -%}
-
-      device.vm.provision :shell , :inline => <<-udev_rule
-echo "  INFO: Adding UDEV Rule: {{ link.mac }} --> {{ link.local_interface }}"
-echo 'ACTION=="add", SUBSYSTEM=="net", ATTR{address}=="{{ link.mac }}", NAME="{{ link.local_interface }}", SUBSYSTEMS=="pci"' >> /etc/udev/rules.d/70-persistent-net.rules
-udev_rule
-     {% endfor %}
-      device.vm.provision :shell , :inline => <<-vagrant_interface_rule
-echo "  INFO: Adding UDEV Rule: Vagrant interface = {% if device.vagrant %}{{ device.vagrant }}{%else%}vagrant{% endif%}"
-echo 'ACTION=="add", SUBSYSTEM=="net", ATTR{ifindex}=="2", NAME="{% if device.vagrant %}{{ device.vagrant }}{%else%}vagrant{% endif%}", SUBSYSTEMS=="pci"' >> /etc/udev/rules.d/70-persistent-net.rules
-echo "#### UDEV Rules (/etc/udev/rules.d/70-persistent-net.rules) ####"
-cat /etc/udev/rules.d/70-persistent-net.rules
-vagrant_interface_rule
-
-{% endif -%}
-
-{% if device.playbook is defined %}
-    # Ansible Playbook Configuration
-    device.vm.provision "ansible" do |ansible|
-          ansible.playbook = "{{ device.playbook }}"
-{%- if function_group is defined %}
-          # ANSIBLE GROUPS CONFIGURATION
-          ansible.groups = {
-{%- for function in function_group%}
-            "{{ function }}" => [{% for device in function_group[function] %}"{{device}}",{% endfor %}],
-{%- endfor %}
-            "network:children" => [{% for function in function_group%}{% if function in network_functions%}"{{function}}",{% endif %}{% endfor %}]
-          }
-{%- endif %}
-    end
-{% endif -%}
-
-{% if device.pxehost=="True" and provider == 'libvirt' -%}
-
-    # NO REMAP APPLICATION for LIBVIRT PXE DEVICE
-{% elif device.remap=="False" -%}
-
-    # NO REMAP APPLICATION Required
-
-{% else -%}
-    # Run Any Platform Specific Code and Apply the interface Re-map
-    #   (may or may not perform a reboot depending on platform)
-    #device.vm.provision :shell , :inline => $script
-
-{% endif -%}
-  end
-{% endfor %}
-
-
-end
-
-{%- endif %}
+{%- endif %} #}
+### End TOR ###
 
 ### Begin Hosts ###
 {% if device.function == "host" -%}
