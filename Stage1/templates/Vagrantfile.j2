@@ -10,6 +10,7 @@ exit unless REQUIRED_PLUGINS_LIBVIRT.all? do |plugin|
     puts "$ vagrant plugin install #{plugin}"
     false
   )
+end
 
 
 Vagrant.configure("2") do |config|
