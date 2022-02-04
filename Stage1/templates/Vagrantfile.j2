@@ -46,17 +46,13 @@ Vagrant.configure("2") do |config|
     device.ssh.username = "{{ device.vagrant_user }}"{% endif %}{% endif %}
 {% if provider == 'virtualbox' %}    device.vm.provider "virtualbox" do |v|
       v.name = "{{ epoch_time }}_{{ device.hostname }}"
-      v.customize ["modifyvm", :id, '--audiocontroller', 'AC97', '--audio', 'Null']
-{% elif provider == 'libvirt' %}
-    device.vm.provider :libvirt do |v|
-      {% if device.pxehost=="True" %}
+      v.customize ["modifyvm", :id, '--audiocontroller', 'AC97', '--audio', 'Null']{% elif provider == 'libvirt' %}
+    device.vm.provider :libvirt do |v|{% if device.pxehost=="True" %}
       v.storage :file, :size => '100G', :type => 'qcow2', :bus => 'sata', :device => 'sda'
       v.boot 'hd'
-      v.boot 'network'{% endif %}
-      {% if device.function == 'host' %}
+      v.boot 'network'{% endif %}{% if device.function == 'host' %}
       v.nic_model_type = 'e1000' {% endif %}
-{% endif %}
-{% if device.memory is defined %}      v.memory = {{ device.memory }}{% endif %}
+{% endif %}{% if device.memory is defined %}      v.memory = {{ device.memory }}{% endif %}
     end{% if synced_folder == False %}
     #   see note here: https://github.com/pradels/vagrant-libvirt#synced-folders
     device.vm.synced_folder ".", "/vagrant", disabled: true{% endif %}
@@ -183,7 +179,7 @@ vagrant_interface_rule
 {% else -%}
     # Run Any Platform Specific Code and Apply the interface Re-map
     #   (may or may not perform a reboot depending on platform)
-    device.vm.provision :shell , :inline => $script
+    #device.vm.provision :shell , :inline => $script
 
 {% endif -%}
   end
