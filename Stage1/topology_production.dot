@@ -9,7 +9,7 @@ graph vx {
  #"spinesw-2" [function="spine" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
  #"edgesw-1" [function="edge" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
  #"edgesw-2" [function="edge" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- "mgmtsw-1" [function="oob-switch" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_switch.sh" ]
+ "mgmtsw-1" [function="oob-switch" vagrant="eth1" os="isharacomix/onie" version="1.0.3" memory="768" config="./helper_scripts/config_switch.sh" ]
  "mgmt-1" [function="oob-server" vagrant="eth1" os="debian/jessie64" memory="1024" config="./helper_scripts/config_oobserver.sh" ]
  #"server-1" [function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
  #"server-2" [function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
