@@ -1,79 +1,111 @@
-graph vx {
- #"leafsw-1" [function="leaf" vagrant="eth1" as="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- #"leafsw-2" [function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- #"leafsw-3" [function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- #"leafsw-4" [function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- #"leafsw-5" [function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- #"leafsw-6" [function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- #"spinesw-1" [function="spine" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- #"spinesw-2" [function="spine" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- #"edgesw-1" [function="edge" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- #"edgesw-2" [function="edge" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
- "mgmtsw-1" [function="oob-switch" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="4.2.0" memory="768" config="./helper_scripts/config_switch.sh" ]
- "mgmt-1" [function="oob-server" vagrant="eth1" os="debian/jessie64" memory="1024" config="./helper_scripts/config_oobserver.sh" ]
- #"server-1" [function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
- #"server-2" [function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
- #"server-3" [function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
- #"server-4" [function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
- #"server-5" [function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
- #"server-6" [function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
+digraph vx {
+    
+  ///////////////////////////////////////
+  // Global setup
+  ///////////////////////////////////////
 
- #"leaf-1":"swp51" -- "spine-1":"swp1"
- #"leaf-2":"swp51" -- "spine-1":"swp2"
- #"leaf-3":"swp51" -- "spine-1":"swp3"
- #"leaf-4":"swp51" -- "spine-1":"swp4"
- #"leaf-5":"swp51" -- "spine-1":"swp5"
- #"leaf-6":"swp51" -- "spine-1":"swp6"
- #"leaf-1":"swp52" -- "spine-2":"swp1"
- #"leaf-2":"swp52" -- "spine-2":"swp2"
- #"leaf-3":"swp52" -- "spine-2":"swp3"
- #"leaf-4":"swp52" -- "spine-2":"swp4"
- #"leaf-5":"swp52" -- "spine-2":"swp5"
- #"leaf-6":"swp52" -- "spine-2":"swp6"
+  node [shape=record];
+  rankdir=BT;
+  ranksep=2;
+  nodesep=2;
+  splines=polyline;
+  
+  ## Define Switch Nodes
+  "leafsw01" [label="{{ <swp51> swp51 | <swp52> swp52 } | leafsw01 | { <swp53> swp53 | <swp54> swp54 }}"; function="leaf" vagrant="eth1" as="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "leafsw02" [label="{{ <swp51> swp51 | <swp52> swp52 } | leafsw02 | { <swp53> swp53 | <swp54> swp54 }}"; function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "leafsw03" [label="{{ <swp51> swp51 | <swp52> swp52 } | leafsw03 | { <swp53> swp53 | <swp54> swp54 }}"; function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "leafsw04" [label="{{ <swp51> swp51 | <swp52> swp52 } | leafsw04 | { <swp53> swp53 | <swp54> swp54 }}"; function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "leafsw05" [label="{{ <swp51> swp51 | <swp52> swp52 } | leafsw05 | { <swp53> swp53 | <swp54> swp54 }}"; function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "leafsw06" [label="{{ <swp51> swp51 | <swp52> swp52 } | leafsw06 | { <swp53> swp53 | <swp54> swp54 }}"; function="leaf" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "spinesw01" [label="{ spinesw01 |{ <swp01> swp01 | <swp02> swp02 | <swp03> swp03 | <swp04> swp04 | <swp05> swp05 | <swp06> swp06 | <swp07> swp07 | <swp08> swp08 }}"; function="spine" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "spinesw02" [label="{ spinesw02 |{ <swp01> swp01 | <swp02> swp02 | <swp03> swp03 | <swp04> swp04 | <swp05> swp05 | <swp06> swp06 | <swp07> swp07 | <swp08> swp08 }}"; function="spine" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "edgesw01" [label="{{ <swp51> swp51 | <swp52> swp52 } | edgesw01 | { <swp54> swp54 | <swp55> swp55 }}"; function="edge" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "internet01" [label="{{ <swp51> swp51 | <swp52> swp52 } | internet01 | { <swp07> swp07 | <swp08> swp08 }}"; function="edge" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "exitsw01" [label="{{ <swp51> swp51 | <swp52> swp52 | <swp53> swp53 } | exitsw01 | { <swp54> swp54 | <swp55> swp55 }}"; function="edge" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "exitsw02" [label="{{ <swp51> swp51 | <swp52> swp52 | <swp53> swp53 } | exitsw02 | { <swp54> swp54 | <swp55> swp55 }}"; function="edge" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_switch.sh" ]
+  "mgmtsw01" [function="oob-switch" vagrant="eth1" os="CumulusCommunity/cumulus-vx" version="4.2.0" memory="768" config="./helper_scripts/config_switch.sh" ]
+ 
+  ## Define Server Nodes
+  #"mgmt-1" [function="oob-server" vagrant="eth1" os="debian/jessie64" memory="1024" config="./helper_scripts/config_oobserver.sh" ]
+  "server-1" [label="{{ <eth01> eth01 | <eth02> eth02 } | server-1}"; function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
+  "server-2" [label="{{ <eth01> eth01 | <eth02> eth02 } | server-2}"; function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
+  "server-3" [label="{{ <eth01> eth01 | <eth02> eth02 } | server-3}"; function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
+  "server-4" [label="{{ <eth01> eth01 | <eth02> eth02 } | server-4}"; function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
+  "server-5" [label="{{ <eth01> eth01 | <eth02> eth02 } | server-5}"; function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
+  "server-6" [label="{{ <eth01> eth01 | <eth02> eth02 } | server-6}"; function="host" vagrant="eth3" os="CumulusCommunity/cumulus-vx" version="3.4.3" memory="768" config="./helper_scripts/config_production_server.sh" ]
 
- #"leaf-1":"swp53" -- "leaf-2":"swp53"
- #"leaf-1":"swp54" -- "leaf-2":"swp54"
- #"leaf-3":"swp53" -- "leaf-4":"swp53"
- #"leaf-3":"swp54" -- "leaf-4":"swp54"
- #"leaf-5":"swp53" -- "leaf-6":"swp53"
- #"leaf-5":"swp54" -- "leaf-6":"swp54"
+  "leafsw01":"swp51":n -> "spinesw01":"swp01":s[dir=both]
+  "leafsw02":"swp51":n -> "spinesw01":"swp02":s[dir=both]
+  "leafsw03":"swp51":n -> "spinesw01":"swp03":s[dir=both]
+  "leafsw04":"swp51":n -> "spinesw01":"swp04":s[dir=both]
+  "leafsw05":"swp51":n -> "spinesw01":"swp05":s[dir=both]
+  "leafsw06":"swp51":n -> "spinesw01":"swp06":s[dir=both]
+  "leafsw01":"swp52":n -> "spinesw02":"swp01":s[dir=both]
+  "leafsw02":"swp52":n -> "spinesw02":"swp02":s[dir=both]
+  "leafsw03":"swp52":n -> "spinesw02":"swp03":s[dir=both]
+  "leafsw04":"swp52":n -> "spinesw02":"swp04":s[dir=both]
+  "leafsw05":"swp52":n -> "spinesw02":"swp05":s[dir=both]
+  "leafsw06":"swp52":n -> "spinesw02":"swp06":s[dir=both]
 
- #"edge-1":"swp53" -- "edge-2":"swp53"
- #"edge-1":"swp54" -- "edge-2":"swp54"
+  #"leafsw01":e -> "leafsw02":w[dir=both][ weight = 100, style = invis ]
+  #"leafsw01":"swp54" -> "leafsw02":"swp54"
+  #"leafsw03":"swp53" -> "leafsw04":"swp53"
+  #"leafsw03":"swp54" -> "leafsw04":"swp54"
+  #"leafsw05":"swp53" -> "leafsw06":"swp53"
+  #"leafsw05":"swp54" -> "leafsw06":"swp54"
 
- #"edge-1":"swp51" -- "spine-1":"swp51"
- #"edge-1":"swp52" -- "spine-2":"swp51"
- #"edge-2":"swp51" -- "spine-1":"swp52"
- #"edge-2":"swp52" -- "spine-2":"swp52"
+  "exitsw01":"swp51":n -> "spinesw01":"swp07":s[dir=both]
+  "exitsw01":"swp52":n -> "spinesw02":"swp07":s[dir=both]
+  "exitsw02":"swp51":n -> "spinesw01":"swp08":s[dir=both]
+  "exitsw02":"swp52":n -> "spinesw02":"swp08":s[dir=both]
+  
+  "exitsw01":"swp53":n -> "internet01":"swp07":s[dir=both]
+  "exitsw02":"swp53":n -> "internet01":"swp08":s[dir=both]
+  
+  "exitsw01":"swp55":s -> "edgesw01":"swp51":n[dir=both]
+  "exitsw02":"swp55":s -> "edgesw01":"swp52":n[dir=both]
+  
+  "server-1":"eth1":n -> "leafsw01":"swp53":s [left_mac="00:03:00:11:11:01"][dir=both]
+  "server-1":"eth2":n -> "leafsw02":"swp53":s [left_mac="00:03:00:11:11:02"][dir=both]
+  "server-2":"eth1":n -> "leafsw01":"swp54":s [left_mac="00:03:00:22:22:01"][dir=both]
+  "server-2":"eth2":n -> "leafsw02":"swp54":s [left_mac="00:03:00:22:22:02"][dir=both]
+  "server-3":"eth1":n -> "leafsw03":"swp53":s [left_mac="00:03:00:33:33:01"][dir=both]
+  "server-3":"eth2":n -> "leafsw04":"swp53":s [left_mac="00:03:00:33:33:02"][dir=both]
+  "server-4":"eth1":n -> "leafsw03":"swp54":s [left_mac="00:03:00:44:44:01"][dir=both]
+  "server-4":"eth2":n -> "leafsw04":"swp54":s [left_mac="00:03:00:44:44:02"][dir=both]
+  "server-5":"eth1":n -> "leafsw05":"swp53":s [left_mac="00:03:00:55:55:01"][dir=both]
+  "server-5":"eth2":n -> "leafsw06":"swp53":s [left_mac="00:03:00:55:55:02"][dir=both]
+  "server-6":"eth1":n -> "leafsw05":"swp54":s [left_mac="00:03:00:66:66:01"][dir=both]
+  "server-6":"eth2":n -> "leafsw06":"swp54":s [left_mac="00:03:00:66:66:02"][dir=both]
 
- #"server-1":"eth1" -- "leaf-1":"swp1" [left_mac="00:03:00:11:11:01"]
- #"server-1":"eth2" -- "leaf-2":"swp1" [left_mac="00:03:00:11:11:02"]
- #"server-2":"eth1" -- "leaf-1":"swp2" [left_mac="00:03:00:22:22:01"]
- #"server-2":"eth2" -- "leaf-2":"swp2" [left_mac="00:03:00:22:22:02"]
- #"server-3":"eth1" -- "leaf-3":"swp1" [left_mac="00:03:00:33:33:01"]
- #"server-3":"eth2" -- "leaf-4":"swp1" [left_mac="00:03:00:33:33:02"]
- #"server-4":"eth1" -- "leaf-3":"swp2" [left_mac="00:03:00:44:44:01"]
- #"server-4":"eth2" -- "leaf-4":"swp2" [left_mac="00:03:00:44:44:02"]
- #"server-5":"eth1" -- "leaf-5":"swp1" [left_mac="00:03:00:55:55:01"]
- #"server-5":"eth2" -- "leaf-6":"swp1" [left_mac="00:03:00:55:55:02"]
- #"server-6":"eth1" -- "leaf-5":"swp2" [left_mac="00:03:00:66:66:01"]
- #"server-6":"eth2" -- "leaf-6":"swp2" [left_mac="00:03:00:66:66:02"]
+  #"leaf-1":"eth0" -- "mgmt-1":"swp1" [left_mac="a0:00:00:00:00:11"]
+  #"leaf-2":"eth0" -- "mgmt-1":"swp2" [left_mac="a0:00:00:00:00:12"]
+  #"leaf-3":"eth0" -- "mgmt-1":"swp3" [left_mac="a0:00:00:00:00:13"]
+  #"leaf-4":"eth0" -- "mgmt-1":"swp4" [left_mac="a0:00:00:00:00:14"]
+  #"leaf-5":"eth0" -- "mgmt-1":"swp5" [left_mac="a0:00:00:00:00:15"]
+  #"leaf-6":"eth0" -- "mgmt-1":"swp6" [left_mac="a0:00:00:00:00:16"]
+  #"spine-1":"eth0" -- "mgmt-1":"swp7" [left_mac="a0:00:00:00:00:21"]
+  #"spine-2":"eth0" -- "mgmt-1":"swp8" [left_mac="a0:00:00:00:00:22"]
+  #"edge-1":"eth0" -- "mgmt-1":"swp9" [left_mac="a0:00:00:00:00:41"]
+  #"edge-2":"eth0" -- "mgmt-1":"swp10" [left_mac="a0:00:00:00:00:42"]
+  #"mgmt-1":"eth0" -- "mgmtsw-1":"swp11" [right_mac="a0:00:00:00:00:61"]
+  #"server-1":"eth0" -- "mgmt-1":"swp12" [left_mac="a0:00:00:00:00:31"]
+  #"server-2":"eth0" -- "mgmt-1":"swp13" [left_mac="a0:00:00:00:00:32"]
+  #"server-3":"eth0" -- "mgmt-1":"swp14" [left_mac="a0:00:00:00:00:33"]
+  #"server-4":"eth0" -- "mgmt-1":"swp15" [left_mac="a0:00:00:00:00:34"]
+  #"server-5":"eth0" -- "mgmt-1":"swp16" [left_mac="a0:00:00:00:00:35"]
+  #"server-6":"eth0" -- "mgmt-1":"swp17" [left_mac="a0:00:00:00:00:36"]
 
- #"leaf-1":"eth0" -- "mgmt-1":"swp1" [left_mac="a0:00:00:00:00:11"]
- #"leaf-2":"eth0" -- "mgmt-1":"swp2" [left_mac="a0:00:00:00:00:12"]
- #"leaf-3":"eth0" -- "mgmt-1":"swp3" [left_mac="a0:00:00:00:00:13"]
- #"leaf-4":"eth0" -- "mgmt-1":"swp4" [left_mac="a0:00:00:00:00:14"]
- #"leaf-5":"eth0" -- "mgmt-1":"swp5" [left_mac="a0:00:00:00:00:15"]
- #"leaf-6":"eth0" -- "mgmt-1":"swp6" [left_mac="a0:00:00:00:00:16"]
- #"spine-1":"eth0" -- "mgmt-1":"swp7" [left_mac="a0:00:00:00:00:21"]
- #"spine-2":"eth0" -- "mgmt-1":"swp8" [left_mac="a0:00:00:00:00:22"]
- #"edge-1":"eth0" -- "mgmt-1":"swp9" [left_mac="a0:00:00:00:00:41"]
- #"edge-2":"eth0" -- "mgmt-1":"swp10" [left_mac="a0:00:00:00:00:42"]
- "mgmt-1":"eth0" -- "mgmtsw-1":"swp11" [right_mac="a0:00:00:00:00:61"]
- #"server-1":"eth0" -- "mgmt-1":"swp12" [left_mac="a0:00:00:00:00:31"]
- #"server-2":"eth0" -- "mgmt-1":"swp13" [left_mac="a0:00:00:00:00:32"]
- #"server-3":"eth0" -- "mgmt-1":"swp14" [left_mac="a0:00:00:00:00:33"]
- #"server-4":"eth0" -- "mgmt-1":"swp15" [left_mac="a0:00:00:00:00:34"]
- #"server-5":"eth0" -- "mgmt-1":"swp16" [left_mac="a0:00:00:00:00:35"]
- #"server-6":"eth0" -- "mgmt-1":"swp17" [left_mac="a0:00:00:00:00:36"]
+  {
+    node [style="invis"];
+    edge [style="invis"];
+
+    a -> b -> c -> d -> e;
+
+    {rank=same;  a;  "spinesw01"; "spinesw02"; "internet01"  }
+    {rank=same;  b;  "leafsw01"; "leafsw02"; "leafsw03"; "leafsw04"; "leafsw05"; "leafsw06";       }
+    {rank=same;  c;  }
+    {rank=same;  d;  "edgesw01"; }
+    {rank=same;  e;  }
+  }       
 }
